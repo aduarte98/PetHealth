@@ -1,0 +1,1 @@
+import React from "react"; export function Badge({ className, variant = "default", ...props }) { return (<div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 ${className}`} {...props} />) }
