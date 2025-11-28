@@ -29,6 +29,9 @@ export default function MedicamentoForm({ medicamento, pets, onSubmit, onCancel,
     }
   }, [medicamento]);
 
+  const selectedPet = pets.find(pet => pet.id === formData.pet_id);
+  const petLabel = selectedPet ? selectedPet.nome : "Selecione o pet";
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -69,7 +72,11 @@ export default function MedicamentoForm({ medicamento, pets, onSubmit, onCancel,
             onValueChange={(value) => handleInputChange('pet_id', value)}
             required
           >
-            <SelectTrigger><SelectValue placeholder="Selecione o pet" /></SelectTrigger>
+            <SelectTrigger>
+              <span className="block truncate text-left">
+                {petLabel}
+              </span>
+            </SelectTrigger>
             <SelectContent>
               {pets.map(pet => (
                 <SelectItem key={pet.id} value={pet.id}>{pet.nome}</SelectItem>

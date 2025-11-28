@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { X, Save } from "lucide-react";
 
-export default function EventForm({ evento, pets, onSubmit, onCancel }) {
+export default function EventForm({ evento, pets = [], onSubmit, onCancel }) {
   const [formData, setFormData] = useState(evento || {
     pet_id: '',
     tipo: 'consulta',
@@ -22,6 +22,10 @@ export default function EventForm({ evento, pets, onSubmit, onCancel }) {
     preco: '',
     lembrete: true
   });
+
+  const selectedPet = pets.find(pet => pet.id === formData.pet_id);
+  const petLabel = selectedPet ? `${selectedPet.nome} (${selectedPet.tipo_animal})` : "Selecione o pet";
+  const showProfessionalFields = ['consulta', 'vacinacao', 'exame', 'cirurgia'].includes(formData.tipo);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -67,7 +71,9 @@ export default function EventForm({ evento, pets, onSubmit, onCancel }) {
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o pet" />
+                <span className="block truncate text-left">
+                  {petLabel}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {pets.map(pet => (
@@ -134,27 +140,29 @@ export default function EventForm({ evento, pets, onSubmit, onCancel }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="veterinario" className="text-gray-700 font-medium">Veterinário</Label>
-            <Input
-              id="veterinario"
-              value={formData.veterinario}
-              onChange={(e) => handleInputChange('veterinario', e.target.value)}
-              placeholder="Nome do veterinário"
-            />
-          </div>
+        {showProfessionalFields && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="veterinario" className="text-gray-700 font-medium">Veterinário</Label>
+              <Input
+                id="veterinario"
+                value={formData.veterinario}
+                onChange={(e) => handleInputChange('veterinario', e.target.value)}
+                placeholder="Nome do veterinário"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="clinica" className="text-gray-700 font-medium">Clínica</Label>
-            <Input
-              id="clinica"
-              value={formData.clinica}
-              onChange={(e) => handleInputChange('clinica', e.target.value)}
-              placeholder="Nome da clínica"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="clinica" className="text-gray-700 font-medium">Clínica</Label>
+              <Input
+                id="clinica"
+                value={formData.clinica}
+                onChange={(e) => handleInputChange('clinica', e.target.value)}
+                placeholder="Nome da clínica"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">

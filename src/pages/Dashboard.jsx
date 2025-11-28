@@ -35,8 +35,23 @@ export default function Dashboard() {
       return acc;
     }, {});
     const tipoMaisComum = Object.entries(tipos).sort(([,a], [,b]) => b - a)[0];
-    const idadeMedia = pets.length > 0 ? 
-      (pets.reduce((sum, pet) => sum + (pet.idade || 0), 0) / pets.length).toFixed(1) : 0;
+    const idadeMedia = (() => {
+      if (pets.length === 0) return null;
+      const idadesCalculadas = pets.map(pet => {
+        if (pet.idade || pet.idade === 0) return Number(pet.idade);
+        if (pet.data_nascimento) {
+          const nascimento = new Date(pet.data_nascimento);
+          if (!isNaN(nascimento)) {
+            const diff = new Date().getFullYear() - nascimento.getFullYear();
+            const hasPassedBirthday = new Date().setFullYear(2000, new Date().getMonth(), new Date().getDate()) >= new Date().setFullYear(2000, nascimento.getMonth(), nascimento.getDate());
+            return hasPassedBirthday ? diff : diff - 1;
+          }
+        }
+        return 0;
+      });
+      const media = idadesCalculadas.reduce((sum, idade) => sum + idade, 0) / pets.length;
+      return media.toFixed(1);
+    })();
 
     return {
       total: totalPets,
@@ -86,7 +101,7 @@ export default function Dashboard() {
           />
           <StatsCards 
             title="Idade Média" 
-            value={`${stats.idadeMedia} anos`}
+            value={stats.idadeMedia != null ? `${stats.idadeMedia} anos` : 'Sem dados'}
             icon={Calendar}
             gradient="from-purple-500 to-purple-600"
           />

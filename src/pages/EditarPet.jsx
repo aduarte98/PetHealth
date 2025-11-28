@@ -4,6 +4,7 @@ import { Pet } from "@/entities/Pet";
 import PetForm from "@/components/pets/PetForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { AlertMessage } from "@/components/ui/alert-message";
 
 export default function EditarPet() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function EditarPet() {
   const [pet, setPet] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
 
   // 1. Carrega os dados do Pet ao abrir a página
   useEffect(() => {
@@ -19,14 +21,18 @@ export default function EditarPet() {
 
   const loadPet = async () => {
     setIsLoading(true);
-    const data = await Pet.getById(id);
-    if (data) {
-      setPet(data);
-    } else {
-      alert("Pet não encontrado");
-      navigate("/dashboard");
+    try {
+      const data = await Pet.getById(id);
+      if (data) {
+        setPet(data);
+        setFeedback(null);
+      } else {
+        setPet(null);
+        setFeedback({ type: "error", message: "Pet não encontrado. Verifique se ele ainda existe." });
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   // 2. Função que salva as alterações
@@ -36,7 +42,8 @@ export default function EditarPet() {
       await Pet.update(id, formData);
       navigate("/dashboard"); // Volta para o dashboard após salvar
     } catch (error) {
-      alert("Erro ao atualizar pet. Tente novamente.");
+      console.error("Erro ao atualizar pet", error);
+      setFeedback({ type: "error", message: "Não foi possível atualizar o pet. Tente novamente." });
     } finally {
       setIsSaving(false);
     }
@@ -60,14 +67,37 @@ export default function EditarPet() {
         <p className="text-gray-500">Atualize as informações ou troque a foto.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        {/* Reutiliza o formulário passando os dados atuais (initialData) */}
-        <PetForm 
-          initialData={pet} 
-          onSubmit={handleUpdate} 
-          isLoading={isSaving} 
-        />
-      </div>
+      {feedback && (
+        <div className="mb-4">
+          <AlertMessage
+            variant={feedback.type}
+            message={feedback.message}
+            onClose={() => setFeedback(null)}
+          />
+        </div>
+      )}
+
+      {pet ? (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          {/* Reutiliza o formulário passando os dados atuais (initialData) */}
+          <PetForm 
+            initialData={pet} 
+            onSubmit={handleUpdate} 
+            isLoading={isSaving} 
+          />
+        </div>
+      ) : (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center text-gray-600">
+          <p>Não encontramos os dados desse pet. Você pode voltar ao painel e selecionar outro registro.</p>
+          <Button 
+            className="mt-4" 
+            variant="outline" 
+            onClick={() => navigate("/dashboard")}
+          >
+            Voltar ao dashboard
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

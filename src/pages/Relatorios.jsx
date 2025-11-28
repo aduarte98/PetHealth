@@ -5,12 +5,14 @@ import { EventoMedico } from "@/entities/EventoMedico";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AlertMessage } from "@/components/ui/alert-message";
 import { FileText, Download, Loader2, PawPrint } from "lucide-react";
 
 export default function Relatorios() {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(null); // ID do pet sendo gerado
+  const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
     loadPets();
@@ -24,6 +26,7 @@ export default function Relatorios() {
 
   const generatePDF = async (pet) => {
     setGenerating(pet.id);
+    setFeedback(null);
     try {
       // 1. Buscar dados completos
       const eventos = await EventoMedico.listByPetId(pet.id);
@@ -103,7 +106,7 @@ export default function Relatorios() {
 
     } catch (error) {
       console.error(error);
-      alert("Erro ao gerar PDF");
+      setFeedback({ type: "error", message: "Não foi possível gerar o PDF. Tente novamente." });
     } finally {
       setGenerating(null);
     }
@@ -113,6 +116,13 @@ export default function Relatorios() {
 
   return (
     <div className="space-y-6">
+      {feedback && (
+        <AlertMessage
+          variant={feedback.type}
+          message={feedback.message}
+          onClose={() => setFeedback(null)}
+        />
+      )}
       <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
         <FileText className="text-blue-600" /> Relatórios e Exportação
       </h1>

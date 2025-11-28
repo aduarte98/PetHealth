@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { AlertMessage } from "@/components/ui/alert-message";
 import { Upload, Loader2, Camera, Image as ImageIcon } from "lucide-react";
 
 export default function PetForm({ onSubmit, initialData, isLoading }) {
@@ -24,6 +25,7 @@ export default function PetForm({ onSubmit, initialData, isLoading }) {
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState(null);
   const fileInputRef = useRef(null); // Referência para o input de arquivo escondido
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function PetForm({ onSubmit, initialData, isLoading }) {
     if (!file) return;
 
     setIsUploading(true);
+    setUploadFeedback(null);
     try {
       // 1. Cria um nome único para o arquivo (ex: 17150000_rex.jpg)
       const fileExt = file.name.split('.').pop();
@@ -74,7 +77,10 @@ export default function PetForm({ onSubmit, initialData, isLoading }) {
 
     } catch (error) {
       console.error("Erro no upload:", error);
-      alert("Erro ao enviar a foto. Verifique se criou o bucket 'pet-photos' no Supabase como PÚBLICO.");
+      setUploadFeedback({
+        type: "error",
+        message: "Erro ao enviar a foto. Verifique se criou o bucket 'pet-photos' como público."
+      });
     } finally {
       setIsUploading(false);
     }
@@ -90,7 +96,16 @@ export default function PetForm({ onSubmit, initialData, isLoading }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       
       {/* ÁREA DA FOTO DO PET */}
-      <div className="flex flex-col items-center justify-center mb-6">
+      <div className="flex flex-col items-center justify-center mb-6 w-full">
+        {uploadFeedback && (
+          <div className="w-full mb-4">
+            <AlertMessage
+              variant={uploadFeedback.type}
+              message={uploadFeedback.message}
+              onClose={() => setUploadFeedback(null)}
+            />
+          </div>
+        )}
         <input 
           type="file" 
           ref={fileInputRef} 

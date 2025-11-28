@@ -10,6 +10,8 @@ import CalendarGrid from "../components/calendar/CalendarGrid";
 import EventList from "../components/calendar/EventList";
 import EventForm from "../components/calendar/EventForm";
 import EventFilters from "../components/calendar/EventFilters";
+import { AlertMessage } from "@/components/ui/alert-message";
+import { SideNotification } from "@/components/ui/side-notification";
 
 export default function Calendario() {
   const [events, setEvents] = useState([]);
@@ -20,10 +22,18 @@ export default function Calendario() {
   const [filterType, setFilterType] = useState("todos");
   const [filterPet, setFilterPet] = useState("todos");
   const [filterStatus, setFilterStatus] = useState("todos");
+  const [feedback, setFeedback] = useState(null);
+  const [sideNotification, setSideNotification] = useState(null);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!sideNotification) return;
+    const timeout = setTimeout(() => setSideNotification(null), 5000);
+    return () => clearTimeout(timeout);
+  }, [sideNotification]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -36,6 +46,7 @@ export default function Calendario() {
       setPets(petsData);
     } catch (error) {
       console.error("Erro ao carregar dados", error);
+      setSideNotification({ type: "error", message: "Não foi possível carregar os dados. Tente novamente em instantes." });
     } finally {
       setIsLoading(false);
     }
@@ -46,8 +57,28 @@ export default function Calendario() {
       await EventoMedico.create(formData);
       await loadData(); // Recarrega tudo
       setIsFormOpen(false);
+      setFeedback({ type: "success", message: "Evento salvo com sucesso." });
     } catch (error) {
-      alert("Erro ao salvar evento");
+      console.error("Erro ao salvar evento", error);
+      setSideNotification({ type: "error", message: "Não foi possível salvar o evento. Verifique os dados e tente novamente." });
+    }
+  };
+
+  const handleUpdateEventStatus = async (eventId, newStatus) => {
+    try {
+      await EventoMedico.update(eventId, { status: newStatus });
+      await loadData();
+    } catch (error) {
+      console.error("Erro ao atualizar status do evento", error);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      await EventoMedico.delete(eventId);
+      await loadData();
+    } catch (error) {
+      console.error("Erro ao excluir evento", error);
     }
   };
 
@@ -76,6 +107,14 @@ export default function Calendario() {
 
   return (
     <div className="space-y-6">
+      {feedback && (
+        <AlertMessage
+          variant={feedback.type}
+          message={feedback.message}
+          onClose={() => setFeedback(null)}
+        />
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -116,7 +155,11 @@ export default function Calendario() {
           {isLoading ? (
              <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div>
           ) : (
-            <EventList events={selectedDayEvents} />
+            <EventList 
+              events={selectedDayEvents}
+              onStatusChange={handleUpdateEventStatus}
+              onDelete={handleDeleteEvent}
+            />
           )}
         </div>
       </div>
@@ -142,6 +185,14 @@ export default function Calendario() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SideNotification
+        open={!!sideNotification}
+        variant={sideNotification?.type}
+        title={sideNotification?.type === "error" ? "Oops!" : undefined}
+        message={sideNotification?.message}
+        onClose={() => setSideNotification(null)}
+      />
     </div>
   );
 }

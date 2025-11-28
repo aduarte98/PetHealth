@@ -43,5 +43,32 @@ export const EventoMedico = {
       if (error) throw error;
       return data;
     } catch (e) { throw e; }
+  },
+
+  update: async (id, updates) => {
+    try {
+      const cleanData = Object.fromEntries(
+        Object.entries(updates).filter(([_, v]) => v != null && v !== "")
+      );
+
+      const { data, error } = await supabase
+        .from('eventos_medicos')
+        .update(cleanData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+
+  delete: async (id) => {
+    const { error } = await supabase
+      .from('eventos_medicos')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };

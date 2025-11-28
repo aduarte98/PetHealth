@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Calendar, Weight, Activity, MapPin } from "lucide-react";
 import WeightChart from "../components/pets/WeightChart";
+import { differenceInYears } from "date-fns";
 
 export default function PetDetalhes() {
   const { id } = useParams();
@@ -49,6 +50,21 @@ export default function PetDetalhes() {
     loadData();
   }, [id]);
 
+  const getAgeLabel = () => {
+    if (!pet) return "-";
+    if (pet.idade || pet.idade === 0) {
+      return `${pet.idade} anos`;
+    }
+    if (pet.data_nascimento) {
+      const nascimento = new Date(pet.data_nascimento);
+      if (!isNaN(nascimento)) {
+        const anos = Math.max(0, differenceInYears(new Date(), nascimento));
+        return `${anos} anos`;
+      }
+    }
+    return "Sem registro";
+  };
+
   if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
   if (!pet) return <div className="p-10 text-center">Pet não encontrado.</div>;
 
@@ -80,7 +96,7 @@ export default function PetDetalhes() {
             <div className="grid grid-cols-2 gap-4 w-full mt-6 pt-6 border-t border-gray-50">
               <div className="text-center">
                 <p className="text-xs text-gray-400 uppercase tracking-wider">Idade</p>
-                <p className="font-semibold text-gray-700">{pet.idade || "?"} anos</p>
+                <p className="font-semibold text-gray-700">{getAgeLabel()}</p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-gray-400 uppercase tracking-wider">Peso Atual</p>

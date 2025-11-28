@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { AlertMessage } from "@/components/ui/alert-message";
 import { PawPrint, Loader2 } from "lucide-react";
 
 export default function Login() {
@@ -12,6 +13,31 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false); // Alternar entre Login e Cadastro
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timeout = setTimeout(() => setFeedback(null), 10000);
+    return () => clearTimeout(timeout);
+  }, [feedback]);
+
+  const getAuthErrorMessage = (error) => {
+    const message = error?.message?.toLowerCase() || "";
+
+    if (message.includes("invalid login credentials")) {
+      return "E-mail ou senha inválidos.";
+    }
+    if (message.includes("password should be at least 6 characters")) {
+      return "A senha deve ter pelo menos 6 caracteres.";
+    }
+    if (message.includes("email not confirmed")) {
+      return "Confirme seu e-mail para acessar.";
+    }
+    if (message.includes("user already registered") || message.includes("already registered")) {
+      return "Este e-mail já possui uma conta cadastrada.";
+    }
+    return "Não foi possível autenticar. Verifique os dados e tente novamente.";
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,6 +46,13 @@ export default function Login() {
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setFeedback(null);
+
+    if (isSignUp && formData.password.length < 6) {
+      setFeedback({ type: "error", message: "A senha precisa ter no mínimo 6 caracteres." });
+      setLoading(false);
+      return;
+    }
 
     try {
       let result;
@@ -32,6 +65,13 @@ export default function Login() {
             data: { full_name: formData.email.split('@')[0] } // Usa parte do email como nome inicial
           }
         });
+
+        const noIdentities = !result.data?.user?.identities || result.data.user.identities.length === 0;
+        if (noIdentities) {
+          setFeedback({ type: "error", message: "Este e-mail já possui uma conta cadastrada." });
+          setLoading(false);
+          return;
+        }
       } else {
         // LOGIN
         result = await supabase.auth.signInWithPassword({
@@ -43,14 +83,14 @@ export default function Login() {
       if (result.error) throw result.error;
 
       if (isSignUp) {
-        alert("Cadastro realizado! Você já pode fazer login.");
+        setFeedback({ type: "success", message: "Cadastro realizado! Você já pode fazer login." });
         setIsSignUp(false); // Volta para tela de login
       } else {
         navigate("/dashboard"); // Manda para o painel
       }
 
     } catch (error) {
-      alert(error.message || "Erro na autenticação");
+      setFeedback({ type: "error", message: getAuthErrorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -71,6 +111,15 @@ export default function Login() {
           </p>
         </CardHeader>
         <CardContent>
+          {feedback && (
+            <div className="mb-4">
+              <AlertMessage
+                variant={feedback.type}
+                message={feedback.message}
+                onClose={() => setFeedback(null)}
+              />
+            </div>
+          )}
           <form onSubmit={handleAuth} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
@@ -102,7 +151,10 @@ export default function Login() {
           <p className="text-sm text-gray-600">
             {isSignUp ? "Já tem uma conta? " : "Não tem conta? "}
             <button 
-              onClick={() => setIsSignUp(!isSignUp)} 
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setFeedback(null);
+              }} 
               className="text-blue-600 font-bold hover:underline"
             >
               {isSignUp ? "Fazer Login" : "Cadastre-se"}

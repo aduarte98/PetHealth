@@ -24,10 +24,36 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
     }
   }, [user]);
 
+  const formatPhone = (raw) => {
+    if (!raw) return "";
+    const digits = raw.replace(/\D/g, "").slice(0, 11);
+    const parts = [];
+    if (digits.length > 0) {
+      parts.push("(" + digits.slice(0, 2));
+      if (digits.length >= 2) parts[0] += ")";
+    }
+    if (digits.length > 2) {
+      const middle = digits.length > 7
+        ? digits.slice(2, 7)
+        : digits.slice(2, 6);
+      parts.push(" " + middle);
+    }
+    if (digits.length > 7) {
+      parts.push("-" + digits.slice(7));
+    } else if (digits.length > 6) {
+      parts.push("-" + digits.slice(6));
+    }
+    return parts.join("").trim();
+  };
+
   const handleInputChange = (field, value) => {
+    let nextValue = value;
+    if (field === 'telefone') {
+      nextValue = formatPhone(value);
+    }
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: nextValue
     }));
   };
 
@@ -95,7 +121,7 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
             type="email"
             value={formData.email}
             disabled
-            className="bg-gray-100"
+            className="bg-gray-100 cursor-not-allowed"
           />
         </div>
       </div>
@@ -107,6 +133,8 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
             value={formData.telefone || ''}
             onChange={(e) => handleInputChange('telefone', e.target.value)}
             placeholder="(00) 00000-0000"
+            inputMode="tel"
+            maxLength={16}
           />
         </div>
 

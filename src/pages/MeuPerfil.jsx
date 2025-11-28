@@ -6,12 +6,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import TutorForm from '../components/tutor/TutorForm';
 import eventEmitter from '@/components/utils/events'; // Corrected path
+import { AlertMessage } from '@/components/ui/alert-message';
+import { SideNotification } from '@/components/ui/side-notification';
 
 export default function MeuPerfil() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [sideNotification, setSideNotification] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -46,13 +49,19 @@ export default function MeuPerfil() {
       setUser(updatedUser);
       eventEmitter.publish('userUpdated', updatedUser);
       setSuccessMessage('Perfil atualizado com sucesso!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setSideNotification({ type: 'success', message: 'Perfil atualizado com sucesso!' });
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!sideNotification) return;
+    const timeout = setTimeout(() => setSideNotification(null), 4000);
+    return () => clearTimeout(timeout);
+  }, [sideNotification]);
 
   if (isLoading) {
     return (
@@ -104,14 +113,26 @@ export default function MeuPerfil() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 text-center p-3 bg-green-100 text-green-800 rounded-lg"
+              className="mt-4"
             >
-              {successMessage}
+              <AlertMessage
+                variant="success"
+                message={successMessage}
+                onClose={() => setSuccessMessage('')}
+              />
             </motion.div>
           )}
 
         </motion.div>
       </div>
+
+      <SideNotification
+        open={!!sideNotification}
+        variant={sideNotification?.type}
+        title={sideNotification?.type === 'success' ? 'Tudo certo!' : undefined}
+        message={sideNotification?.message}
+        onClose={() => setSideNotification(null)}
+      />
     </div>
   );
 }

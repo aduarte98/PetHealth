@@ -79,7 +79,7 @@ const navItems = [
             <img src={user.foto_url || `https://ui-avatars.com/api/?name=${user.full_name}&background=random`} alt="User" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">{user.full_name}</p>
-              <p className="text-xs text-gray-500 truncate cursor-pointer hover:text-blue-600">Editar Perfil</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
             <button onClick={handleLogout} className="p-2 hover:bg-white rounded-full transition-colors text-gray-500 hover:text-red-500"><LogOut size={18} /></button>
           </div>
