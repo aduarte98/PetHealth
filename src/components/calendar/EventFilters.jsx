@@ -1,15 +1,23 @@
 import React from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function EventFilters({ 
+export default function EventFilters({
   pets = [], // Valor padrão vazio para não quebrar
-  filterType, setFilterType,
-  filterPet, setFilterPet,
-  filterStatus, setFilterStatus 
+  filterType,
+  setFilterType,
+  filterPet,
+  setFilterPet,
+  filterStatus,
+  setFilterStatus,
 }) {
-
   // Função para limpar todos os filtros
   const clearFilters = () => {
     setFilterType("todos");
@@ -17,7 +25,8 @@ export default function EventFilters({
     setFilterStatus("todos");
   };
 
-  const hasActiveFilters = filterType !== "todos" || filterPet !== "todos" || filterStatus !== "todos";
+  const hasActiveFilters =
+    filterType !== "todos" || filterPet !== "todos" || filterStatus !== "todos";
 
   return (
     <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6">
@@ -25,7 +34,7 @@ export default function EventFilters({
         <Filter className="w-4 h-4" />
         Filtros
         {hasActiveFilters && (
-          <button 
+          <button
             onClick={clearFilters}
             className="ml-auto text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
           >
@@ -64,11 +73,13 @@ export default function EventFilters({
             <SelectContent>
               <SelectItem value="todos">Todos os Pets</SelectItem>
               {/* Verifica se pets existe e tem itens antes de fazer o map */}
-              {pets && pets.length > 0 && pets.map((pet) => (
-                <SelectItem key={pet.id} value={pet.id}>
-                  {pet.nome}
-                </SelectItem>
-              ))}
+              {pets &&
+                pets.length > 0 &&
+                pets.map((pet) => (
+                  <SelectItem key={pet.id} value={String(pet.id)}>
+                    {pet.nome}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>

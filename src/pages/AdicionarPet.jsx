@@ -6,20 +6,26 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
+import { AlertMessage } from "@/components/ui/alert-message";
 
 import PetForm from "../components/pets/PetForm";
 
 export default function AdicionarPet() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
 
   const handleSubmit = async (petData) => {
     setIsSubmitting(true);
+    setFormError(null);
     try {
       await Pet.create(petData);
       navigate(createPageUrl("Dashboard"));
     } catch (error) {
       console.error("Erro ao criar pet:", error);
+      setFormError(
+        error?.message || "Não foi possível salvar o pet. Tente novamente."
+      );
     }
     setIsSubmitting(false);
   };
@@ -38,14 +44,16 @@ export default function AdicionarPet() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="text-2xl md:text-3xl font-bold text-gray-800"
             >
               Adicionar Novo Pet
             </motion.h1>
-            <p className="text-gray-600 mt-1">Cadastre seu companheiro e mantenha as informações organizadas</p>
+            <p className="text-gray-600 mt-1">
+              Cadastre seu companheiro e mantenha as informações organizadas
+            </p>
           </div>
         </div>
 
@@ -57,10 +65,21 @@ export default function AdicionarPet() {
         >
           <Card className="shadow-xl bg-white/90 backdrop-blur-sm border-0">
             <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-xl text-gray-800">Informações do Pet</CardTitle>
+              <CardTitle className="text-xl text-gray-800">
+                Informações do Pet
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <PetForm 
+              {formError && (
+                <div className="mb-4">
+                  <AlertMessage
+                    variant="error"
+                    message={formError}
+                    onClose={() => setFormError(null)}
+                  />
+                </div>
+              )}
+              <PetForm
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 onCancel={() => navigate(createPageUrl("Dashboard"))}

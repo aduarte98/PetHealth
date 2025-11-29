@@ -24,6 +24,7 @@ export default function Calendario() {
   const [filterStatus, setFilterStatus] = useState("todos");
   const [feedback, setFeedback] = useState(null);
   const [sideNotification, setSideNotification] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -40,13 +41,17 @@ export default function Calendario() {
     try {
       const [eventsData, petsData] = await Promise.all([
         EventoMedico.list(),
-        Pet.list()
+        Pet.list(),
       ]);
       setEvents(eventsData);
       setPets(petsData);
     } catch (error) {
       console.error("Erro ao carregar dados", error);
-      setSideNotification({ type: "error", message: "Não foi possível carregar os dados. Tente novamente em instantes." });
+      setSideNotification({
+        type: "error",
+        message:
+          "Não foi possível carregar os dados. Tente novamente em instantes.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -54,14 +59,38 @@ export default function Calendario() {
 
   const handleAddEvent = async (formData) => {
     try {
-      await EventoMedico.create(formData);
+      if (editingEvent) {
+        await EventoMedico.update(editingEvent.id, formData);
+      } else {
+        await EventoMedico.create(formData);
+      }
       await loadData(); // Recarrega tudo
       setIsFormOpen(false);
-      setFeedback({ type: "success", message: "Evento salvo com sucesso." });
+      setEditingEvent(null);
+      setFeedback({
+        type: "success",
+        message: editingEvent
+          ? "Evento atualizado."
+          : "Evento salvo com sucesso.",
+      });
     } catch (error) {
       console.error("Erro ao salvar evento", error);
-      setSideNotification({ type: "error", message: "Não foi possível salvar o evento. Verifique os dados e tente novamente." });
+      setSideNotification({
+        type: "error",
+        message:
+          "Não foi possível salvar o evento. Verifique os dados e tente novamente.",
+      });
     }
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditingEvent(null);
   };
 
   const handleUpdateEventStatus = async (eventId, newStatus) => {
@@ -86,18 +115,19 @@ export default function Calendario() {
   // Filtra os eventos para o dia clicado
   const getEventsForSelectedDate = () => {
     // Formata a data selecionada para YYYY-MM-DD (igual ao banco)
-    const dateString = format(selectedDate, 'yyyy-MM-dd');
-    
-    return events.filter(event => {
+    const dateString = format(selectedDate, "yyyy-MM-dd");
+
+    return events.filter((event) => {
       // 1. Verifica se é o dia certo
       const isSameDay = event.data === dateString;
-      
+
       if (!isSameDay) return false;
 
       // 2. Aplica os filtros visuais (Tipo, Pet, Status)
       if (filterType !== "todos" && event.tipo !== filterType) return false;
       if (filterPet !== "todos" && event.pet_id !== filterPet) return false;
-      if (filterStatus !== "todos" && event.status !== filterStatus) return false;
+      if (filterStatus !== "todos" && event.status !== filterStatus)
+        return false;
 
       return true;
     });
@@ -121,27 +151,35 @@ export default function Calendario() {
             <CalendarIcon className="w-8 h-8 text-blue-600" />
             Calendário de Cuidados
           </h1>
-          <p className="text-gray-500">Organize consultas, vacinas e cuidados dos seus pets</p>
+          <p className="text-gray-500">
+            Organize consultas, vacinas e cuidados dos seus pets
+          </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button
+          onClick={() => setIsFormOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
           <Plus className="w-4 h-4 mr-2" /> Novo Evento
         </Button>
       </div>
 
       {/* Filtros */}
-      <EventFilters 
+      <EventFilters
         pets={pets}
-        filterType={filterType} setFilterType={setFilterType}
-        filterPet={filterPet} setFilterPet={setFilterPet}
-        filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+        filterType={filterType}
+        setFilterType={setFilterType}
+        filterPet={filterPet}
+        setFilterPet={setFilterPet}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Coluna da Esquerda: O Calendário Visual */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <CalendarGrid 
-            events={events} 
-            selectedDate={selectedDate} 
+          <CalendarGrid
+            events={events}
+            selectedDate={selectedDate}
             onSelectDate={setSelectedDate} // Passa a função de clicar
           />
         </div>
@@ -151,14 +189,17 @@ export default function Calendario() {
           <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">
             {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
           </h3>
-          
+
           {isLoading ? (
-             <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div>
+            <div className="flex justify-center py-10">
+              <Loader2 className="animate-spin" />
+            </div>
           ) : (
-            <EventList 
+            <EventList
               events={selectedDayEvents}
               onStatusChange={handleUpdateEventStatus}
               onDelete={handleDeleteEvent}
+              onEdit={handleEditEvent}
             />
           )}
         </div>
@@ -167,19 +208,25 @@ export default function Calendario() {
       {/* Modal de Adicionar Evento */}
       <AnimatePresence>
         {isFormOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           >
-            <motion.div 
-              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
               className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl"
             >
-              <EventForm 
-                pets={pets} 
+              <EventForm
+                key={editingEvent?.id ?? "novo"}
+                pets={pets}
                 initialDate={selectedDate}
-                onSubmit={handleAddEvent} 
-                onCancel={() => setIsFormOpen(false)} 
+                evento={editingEvent}
+                onSubmit={handleAddEvent}
+                onCancel={handleCloseForm}
               />
             </motion.div>
           </motion.div>

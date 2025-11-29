@@ -1,28 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { UploadFile } from "@/integrations/Core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertMessage } from "@/components/ui/alert-message";
+
 import { Loader2, Camera, Save } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function TutorForm({ user, onSubmit, isSubmitting }) {
+export default function TutorForm({
+  user,
+  onSubmit,
+  isSubmitting,
+  feedbackMessage,
+  feedbackVariant = "success",
+}) {
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    foto_url: '',
-    telefone: '',
-    endereco: '',
-    ...user
+    full_name: "",
+    email: "",
+    foto_url: "",
+    telefone: "",
+    endereco: "",
+    ...user,
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [visibleFeedback, setVisibleFeedback] = useState(feedbackMessage);
+  const [photoFeedback, setPhotoFeedback] = useState(null);
 
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({ ...prev, ...user }));
+      setFormData((prev) => ({ ...prev, ...user }));
     }
   }, [user]);
+
+  useEffect(() => {
+    setVisibleFeedback(feedbackMessage);
+    if (!feedbackMessage) return;
+    const timer = setTimeout(() => setVisibleFeedback(null), 10000);
+    return () => clearTimeout(timer);
+  }, [feedbackMessage]);
 
   const formatPhone = (raw) => {
     if (!raw) return "";
@@ -33,9 +50,8 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
       if (digits.length >= 2) parts[0] += ")";
     }
     if (digits.length > 2) {
-      const middle = digits.length > 7
-        ? digits.slice(2, 7)
-        : digits.slice(2, 6);
+      const middle =
+        digits.length > 7 ? digits.slice(2, 7) : digits.slice(2, 6);
       parts.push(" " + middle);
     }
     if (digits.length > 7) {
@@ -48,12 +64,12 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
 
   const handleInputChange = (field, value) => {
     let nextValue = value;
-    if (field === 'telefone') {
+    if (field === "telefone") {
       nextValue = formatPhone(value);
     }
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: nextValue
+      [field]: nextValue,
     }));
   };
 
@@ -62,13 +78,26 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
     if (!file) return;
 
     setUploadingPhoto(true);
+    setPhotoFeedback(null);
     try {
-      const { file_url } = await UploadFile({ file });
-      handleInputChange('foto_url', file_url);
+      const { file_url } = await UploadFile({ file, bucket: "user-photos" });
+      handleInputChange("foto_url", file_url);
+      setPhotoFeedback({
+        variant: "success",
+        message: "Foto atualizada com sucesso!",
+      });
     } catch (error) {
-      console.error('Erro ao fazer upload da foto:', error);
+      console.error("Erro ao fazer upload da foto:", error);
+      setPhotoFeedback({
+        variant: "error",
+        message:
+          error?.message ||
+          "Erro ao enviar a foto. Verifique as permissões do bucket.",
+      });
+    } finally {
+      setUploadingPhoto(false);
+      setTimeout(() => setPhotoFeedback(null), 10000);
     }
-    setUploadingPhoto(false);
   };
 
   const handleSubmit = (e) => {
@@ -77,22 +106,37 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
   };
 
   return (
-    <motion.form 
+    <motion.form
       onSubmit={handleSubmit}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
+      {visibleFeedback && (
+        <AlertMessage
+          variant={feedbackVariant}
+          message={visibleFeedback}
+          onClose={() => setVisibleFeedback(null)}
+        />
+      )}
+
       <div className="text-center">
         <div className="relative inline-block">
-          <img 
-            src={formData.foto_url || `https://ui-avatars.com/api/?name=${formData.full_name}&background=E0F2F1&color=1E88E5`}
-            alt="Foto do Tutor" 
+          <img
+            src={
+              formData.foto_url ||
+              `https://ui-avatars.com/api/?name=${formData.full_name}&background=E0F2F1&color=1E88E5`
+            }
+            alt="Foto do Tutor"
             className="w-32 h-32 rounded-full object-cover border-4 border-blue-200 shadow-lg"
           />
           <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors shadow-lg">
-            {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-            <input 
+            {uploadingPhoto ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Camera className="w-4 h-4" />
+            )}
+            <input
               type="file"
               accept="image/*"
               onChange={handlePhotoUpload}
@@ -101,21 +145,34 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
             />
           </label>
         </div>
+        {photoFeedback && (
+          <div className="mt-4">
+            <AlertMessage
+              variant={photoFeedback.variant}
+              message={photoFeedback.message}
+              onClose={() => setPhotoFeedback(null)}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="full_name" className="text-gray-700 font-medium">Nome Completo</Label>
+          <Label htmlFor="full_name" className="text-gray-700 font-medium">
+            Nome Completo
+          </Label>
           <Input
             id="full_name"
             value={formData.full_name}
-            onChange={(e) => handleInputChange('full_name', e.target.value)}
+            onChange={(e) => handleInputChange("full_name", e.target.value)}
             placeholder="Seu nome"
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
+          <Label htmlFor="email" className="text-gray-700 font-medium">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
@@ -126,31 +183,35 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
         </div>
       </div>
 
-       <div className="space-y-2">
-          <Label htmlFor="telefone" className="text-gray-700 font-medium">Telefone</Label>
-          <Input
-            id="telefone"
-            value={formData.telefone || ''}
-            onChange={(e) => handleInputChange('telefone', e.target.value)}
-            placeholder="(00) 00000-0000"
-            inputMode="tel"
-            maxLength={16}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="telefone" className="text-gray-700 font-medium">
+          Telefone
+        </Label>
+        <Input
+          id="telefone"
+          value={formData.telefone || ""}
+          onChange={(e) => handleInputChange("telefone", e.target.value)}
+          placeholder="(00) 00000-0000"
+          inputMode="tel"
+          maxLength={16}
+        />
+      </div>
 
       <div className="space-y-2">
-        <Label htmlFor="endereco" className="text-gray-700 font-medium">Endereço</Label>
+        <Label htmlFor="endereco" className="text-gray-700 font-medium">
+          Endereço
+        </Label>
         <Textarea
           id="endereco"
-          value={formData.endereco || ''}
-          onChange={(e) => handleInputChange('endereco', e.target.value)}
+          value={formData.endereco || ""}
+          onChange={(e) => handleInputChange("endereco", e.target.value)}
           placeholder="Seu endereço completo"
           rows={3}
         />
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button 
+        <Button
           type="submit"
           disabled={isSubmitting}
           className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
@@ -162,8 +223,8 @@ export default function TutorForm({ user, onSubmit, isSubmitting }) {
             </>
           ) : (
             <>
-             <Save className="w-4 h-4 mr-2" />
-             Salvar Alterações
+              <Save className="w-4 h-4 mr-2" />
+              Salvar Alterações
             </>
           )}
         </Button>

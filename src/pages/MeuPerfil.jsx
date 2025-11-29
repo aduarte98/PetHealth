@@ -1,20 +1,17 @@
-
-import { useState, useEffect } from 'react';
-import { User } from '@/entities/User';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { motion } from 'framer-motion';
-import TutorForm from '../components/tutor/TutorForm';
-import eventEmitter from '@/components/utils/events'; // Corrected path
-import { AlertMessage } from '@/components/ui/alert-message';
-import { SideNotification } from '@/components/ui/side-notification';
+import { useState, useEffect } from "react";
+import { User } from "@/entities/User";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
+import TutorForm from "../components/tutor/TutorForm";
+import eventEmitter from "@/components/utils/events"; // Corrected path
+import { AlertMessage } from "@/components/ui/alert-message";
 
 export default function MeuPerfil() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [sideNotification, setSideNotification] = useState(null);
+  const [formFeedback, setFormFeedback] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -33,44 +30,47 @@ export default function MeuPerfil() {
 
   const handleUpdateUser = async (userData) => {
     setIsSubmitting(true);
-    setSuccessMessage('');
+    setFormFeedback(null);
     try {
       const { full_name, foto_url, telefone, endereco } = userData;
-      
+
       const updatedUser = await User.updateMyUserData({
         full_name,
         data: {
           foto_url,
           telefone,
-          endereco
+          endereco,
         },
       });
 
       setUser(updatedUser);
-      eventEmitter.publish('userUpdated', updatedUser);
-      setSuccessMessage('Perfil atualizado com sucesso!');
-      setSideNotification({ type: 'success', message: 'Perfil atualizado com sucesso!' });
+      eventEmitter.emit("userUpdated", updatedUser);
+      setFormFeedback({
+        variant: "success",
+        message: "Dados atualizados com sucesso!",
+      });
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
+      const errorMessage =
+        error?.message || "Não foi possível atualizar. Tente novamente.";
+      setFormFeedback({ variant: "error", message: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (!sideNotification) return;
-    const timeout = setTimeout(() => setSideNotification(null), 4000);
-    return () => clearTimeout(timeout);
-  }, [sideNotification]);
 
   if (isLoading) {
     return (
       <div className="p-8">
         <Skeleton className="h-12 w-1/3 mb-8" />
         <Card>
-          <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+          <CardHeader>
+            <Skeleton className="h-8 w-1/4" />
+          </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex justify-center"><Skeleton className="h-32 w-32 rounded-full" /></div>
+            <div className="flex justify-center">
+              <Skeleton className="h-32 w-32 rounded-full" />
+            </div>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-24 w-full" />
@@ -98,41 +98,22 @@ export default function MeuPerfil() {
         >
           <Card className="shadow-xl bg-white/90 backdrop-blur-sm border-0">
             <CardHeader>
-              <CardTitle className="text-xl text-gray-800">Informações do Tutor</CardTitle>
+              <CardTitle className="text-xl text-gray-800">
+                Informações do Tutor
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <TutorForm
                 user={user}
                 onSubmit={handleUpdateUser}
                 isSubmitting={isSubmitting}
+                feedbackMessage={formFeedback?.message}
+                feedbackVariant={formFeedback?.variant}
               />
             </CardContent>
           </Card>
-          
-          {successMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4"
-            >
-              <AlertMessage
-                variant="success"
-                message={successMessage}
-                onClose={() => setSuccessMessage('')}
-              />
-            </motion.div>
-          )}
-
         </motion.div>
       </div>
-
-      <SideNotification
-        open={!!sideNotification}
-        variant={sideNotification?.type}
-        title={sideNotification?.type === 'success' ? 'Tudo certo!' : undefined}
-        message={sideNotification?.message}
-        onClose={() => setSideNotification(null)}
-      />
     </div>
   );
 }
