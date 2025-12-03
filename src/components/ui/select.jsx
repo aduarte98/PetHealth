@@ -1,17 +1,41 @@
-import React, { useState, createContext, useContext, useEffect, useRef } from "react";
+import React, {
+  useState,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import { Check, ChevronDown } from "lucide-react";
 
 const SelectContext = createContext(null);
 
-export const Select = ({ children, onValueChange, defaultValue }) => {
+export const Select = ({
+  children,
+  onValueChange,
+  defaultValue,
+  value: controlledValue,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [value, setValue] = useState(defaultValue || "");
+  const [internalValue, setInternalValue] = useState(defaultValue || "");
   const containerRef = useRef(null);
 
+  const isControlled = controlledValue !== undefined;
+  const currentValue = isControlled ? controlledValue : internalValue;
+
+  useEffect(() => {
+    if (!isControlled && defaultValue !== undefined) {
+      setInternalValue(defaultValue);
+    }
+  }, [defaultValue, isControlled]);
+
   // Fecha ao clicar fora
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -20,13 +44,17 @@ export const Select = ({ children, onValueChange, defaultValue }) => {
   }, []);
 
   const handleSelect = (newValue) => {
-    setValue(newValue);
+    if (!isControlled) {
+      setInternalValue(newValue);
+    }
     if (onValueChange) onValueChange(newValue);
     setIsOpen(false);
   };
 
   return (
-    <SelectContext.Provider value={{ isOpen, setIsOpen, value, handleSelect }}>
+    <SelectContext.Provider
+      value={{ isOpen, setIsOpen, value: currentValue ?? "", handleSelect }}
+    >
       <div className="relative w-full" ref={containerRef}>
         {children}
       </div>
@@ -43,7 +71,11 @@ export const SelectTrigger = ({ children, className }) => {
       className={`flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       {children}
-      <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      <ChevronDown
+        className={`h-4 w-4 opacity-50 transition-transform ${
+          isOpen ? "rotate-180" : ""
+        }`}
+      />
     </button>
   );
 };
@@ -57,14 +89,14 @@ export const SelectValue = ({ placeholder }) => {
 
 export const SelectContent = ({ children, className }) => {
   const { isOpen } = useContext(SelectContext);
-  
+
   if (!isOpen) return null;
 
   return (
-    <div className={`absolute z-50 min-w-[8rem] w-full overflow-hidden rounded-md border border-gray-200 bg-white text-gray-950 shadow-md animate-in fade-in-80 mt-1 ${className}`}>
-      <div className="p-1 max-h-60 overflow-y-auto">
-        {children}
-      </div>
+    <div
+      className={`absolute z-50 min-w-[8rem] w-full overflow-hidden rounded-md border border-gray-200 bg-white text-gray-950 shadow-md animate-in fade-in-80 mt-1 ${className}`}
+    >
+      <div className="p-1 max-h-60 overflow-y-auto">{children}</div>
     </div>
   );
 };
@@ -76,7 +108,9 @@ export const SelectItem = ({ children, value, className }) => {
   return (
     <div
       onClick={() => handleSelect(value)}
-      className={`relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-gray-100 cursor-pointer ${isSelected ? 'bg-blue-50 text-blue-900' : ''} ${className}`}
+      className={`relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-gray-100 cursor-pointer ${
+        isSelected ? "bg-blue-50 text-blue-900" : ""
+      } ${className}`}
     >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
         {isSelected && <Check className="h-4 w-4 text-blue-600" />}

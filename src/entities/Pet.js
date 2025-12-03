@@ -100,4 +100,20 @@ export const Pet = {
       throw error;
     }
   },
+
+  delete: async (id) => {
+    try {
+      const tutorId = await getCurrentTutorId();
+      const { error } = await supabase
+        .from("pets")
+        .delete()
+        .eq("id", id)
+        .eq("tutor_id", tutorId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Erro ao excluir pet:", error);
+      throw error;
+    }
+  },
 };

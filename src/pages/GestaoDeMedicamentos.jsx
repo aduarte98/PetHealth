@@ -66,12 +66,27 @@ export default function GestaoDeMedicamentos() {
     }
   };
 
-  const handleUpdateStatus = async (id, status) => {
+  const handleUpdateStatus = async (id, status, extra = {}) => {
     try {
-      await Medicamento.update(id, { status });
+      const updated = await Medicamento.update(id, { status, ...extra });
       await loadData();
+      return updated;
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
+      return null;
+    }
+  };
+
+  const handleUpdateProgress = async (id, diasConcluidos, status) => {
+    try {
+      const payload = { dias_concluidos: diasConcluidos };
+      if (status) payload.status = status;
+      const updated = await Medicamento.update(id, payload);
+      await loadData();
+      return updated;
+    } catch (error) {
+      console.error("Erro ao atualizar progresso:", error);
+      return null;
     }
   };
 
@@ -133,6 +148,7 @@ export default function GestaoDeMedicamentos() {
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         onUpdateStatus={handleUpdateStatus}
+                        onUpdateProgress={handleUpdateProgress}
                       />
                     ))}
                   </div>

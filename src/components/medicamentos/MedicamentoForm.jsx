@@ -29,6 +29,7 @@ export default function MedicamentoForm({
     duracao_dias: 7,
     instrucoes: "",
     status: "ativo",
+    dias_concluidos: 0,
   });
 
   const [formData, setFormData] = useState(createDefaultFormData);
@@ -46,6 +47,7 @@ export default function MedicamentoForm({
         duracao_dias: medicamento.duracao_dias ?? 7,
         instrucoes: medicamento.instrucoes ?? "",
         status: medicamento.status ?? "ativo",
+        dias_concluidos: medicamento.dias_concluidos ?? 0,
       });
     } else {
       setFormData(createDefaultFormData());
@@ -76,6 +78,7 @@ export default function MedicamentoForm({
       duracao_dias: Number(formData.duracao_dias) || 0,
       instrucoes: formData.instrucoes,
       status: formData.status,
+      dias_concluidos: Number(formData.dias_concluidos) || 0,
     };
     onSubmit(processedData);
   };

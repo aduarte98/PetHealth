@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./Layout";
+import AuthCallback from "@/pages/AuthCallback";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Páginas
@@ -21,17 +22,23 @@ export default function App() {
       <Routes>
         {/* Rota Pública (Login) */}
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Rotas Protegidas (Só acessa com senha) */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}> {/* O Layout agora fica aqui dentro */}
+          <Route element={<Layout />}>
+            {" "}
+            {/* O Layout agora fica aqui dentro */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/adicionarpet" element={<AdicionarPet />} />
             <Route path="/editar-pet/:id" element={<EditarPet />} />
             <Route path="/pet/:id" element={<PetDetalhes />} />
             <Route path="/calendario" element={<Calendario />} />
-            <Route path="/gestaodemedicamentos" element={<GestaoDeMedicamentos />} />
+            <Route
+              path="/gestaodemedicamentos"
+              element={<GestaoDeMedicamentos />}
+            />
             <Route path="/emergencias" element={<Emergencias />} />
             <Route path="/meuperfil" element={<MeuPerfil />} />
             <Route path="/relatorios" element={<Relatorios />} />

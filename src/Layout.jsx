@@ -239,7 +239,7 @@ export default function Layout() {
 
     {
       name: "Veterinarios",
-      label: "Vets Perto",
+      label: "Vets Próximo",
       icon: Stethoscope,
       url: "/veterinarios",
     },

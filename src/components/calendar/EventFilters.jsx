@@ -4,7 +4,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,34 @@ export default function EventFilters({
   filterStatus,
   setFilterStatus,
 }) {
+  const TYPE_LABELS = {
+    todos: "Todos os tipos",
+    consulta: "Consulta",
+    vacinacao: "Vacinação",
+    exame: "Exame",
+    medicamento: "Medicamento",
+    cirurgia: "Cirurgia",
+    outro: "Outro",
+  };
+
+  const STATUS_LABELS = {
+    todos: "Todos",
+    agendado: "Agendado",
+    realizado: "Realizado",
+    cancelado: "Cancelado",
+  };
+
   // Função para limpar todos os filtros
   const clearFilters = () => {
     setFilterType("todos");
     setFilterPet("todos");
     setFilterStatus("todos");
+  };
+
+  const getSelectedPetLabel = () => {
+    if (filterPet === "todos" || !pets?.length) return "Todos os Pets";
+    const selected = pets.find((pet) => String(pet.id) === String(filterPet));
+    return selected ? selected.nome : "Selecione um pet";
   };
 
   const hasActiveFilters =
@@ -35,6 +57,7 @@ export default function EventFilters({
         Filtros
         {hasActiveFilters && (
           <button
+            type="button"
             onClick={clearFilters}
             className="ml-auto text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
           >
@@ -49,7 +72,9 @@ export default function EventFilters({
           <span className="text-xs text-gray-400 ml-1">Tipo de Evento</span>
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger>
-              <SelectValue placeholder="Todos" />
+              <span className="block truncate">
+                {TYPE_LABELS[filterType] ?? "Tipo"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
@@ -68,7 +93,9 @@ export default function EventFilters({
           <span className="text-xs text-gray-400 ml-1">Pet</span>
           <Select value={filterPet} onValueChange={setFilterPet}>
             <SelectTrigger>
-              <SelectValue placeholder="Todos os Pets" />
+              <span className="block truncate text-left">
+                {getSelectedPetLabel()}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os Pets</SelectItem>
@@ -89,7 +116,9 @@ export default function EventFilters({
           <span className="text-xs text-gray-400 ml-1">Status</span>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger>
-              <SelectValue placeholder="Todos" />
+              <span className="block truncate">
+                {STATUS_LABELS[filterStatus] ?? "Status"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
